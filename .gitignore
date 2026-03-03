@@ -1,3 +1,6 @@
 # Notebook artefact
 .ipynb_checkpoints/
 */.ipynb_checkpoints/*
+
+# python
+__pycache__/
