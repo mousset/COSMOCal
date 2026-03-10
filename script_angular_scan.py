@@ -39,7 +39,7 @@ stop_freq = 170E9 # stop frequency of the VNA sweep in Hz
 points = 60 # number of points in the VNA sweep.
 IFBW = 1000 # Hz
 
-theta_R = 90 # angle of the receiver in degrees
+theta_R = 0 # angle of the receiver in degrees
 
 unit_name = espc.give_unit_name(units)
 nS = len(Sparameters) # Number of S parameters
