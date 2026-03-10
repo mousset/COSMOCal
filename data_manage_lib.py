@@ -87,3 +87,4 @@ def rename_header_key(fits_file, old_key, new_key, save=True):
         else:
             print(f"✗ Clé '{old_key}' non trouvée dans le header")
             return False
+        
