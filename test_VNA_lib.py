@@ -16,9 +16,9 @@ vnac.setup_channel_vna(start_freq=110E9, stop_freq=170E9, points=1000, IFBW=1000
 Sparameters=["S21", "S12", "S11", "S22"]
 vnac.setup_traces(Sparameters=Sparameters)
 
-freq_samples, mag, phi = vnac.make_one_acquisition(state_avg=True, count_avg=5, Sparameters=Sparameters)
+freq_samples, mag, phi = vnac.make_one_acquisition(state_avg=False, count_avg=5, Sparameters=Sparameters)
 
-np.save(f'{save_path}mag_avec_mousse++doublepropre_dans_polar.npy', mag)
+#np.save(f'{save_path}mag_avec_mousse++doublepropre_dans_polar.npy', mag)
 
 # print(mag.shape)
 
@@ -30,7 +30,7 @@ axs[0].plot(freq_samples, mag[0])
 axs[0].set_ylabel("dB")
 axs[0].set_xlabel("frequency")
 
-axs[1].plot(freq_samples, phi[0])
+axs[1].plot(freq_samples, mag[1])
 axs[1].set_ylabel("deg")
 axs[1].set_xlabel("frequency")
 
