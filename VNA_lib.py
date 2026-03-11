@@ -79,9 +79,10 @@ class VNA_commande:
 
         """
         try:
-            self.vna.write(':MMEM:LOAD:FILE "%s"' % (f'D:/{file}')) # call the saved state and calset data 
+            self.vna.write(':MMEM:LOAD:FILE "%s"' % (f'D:/{file}')) # call the saved state and calset data
+            self.vna.write('*WAI') # wait for the VNA to finish loading the state before sending the next command
             print(f'VNA state {file} loaded.')
-            time.sleep(2)
+            time.sleep(1)
         except Exception as e:
             print(f"erreur lors de la selection de la bande: {e}")
 
@@ -118,14 +119,16 @@ class VNA_commande:
             print(f"Canal {channel} configuré : start={start_freq}, stop={stop_freq}, points={points}")
 
             ## Turn off the continuous measure mode => avoid Error 213 (Init ignored)
-            self.vna.write(f'INIT{channel}:CONT OFF') 
+            self.vna.write(f'INIT{channel}:CONT OFF')
+            self.vna.write('*WAI')
             print("Continuous mode OFF")
-            time.sleep(1)
+            time.sleep(0.5)
 
-            ### delete all the default measurements
-            self.vna.write("CALC1:MEAS:DEL:ALL") 
+            ### Delete all the default measurements
+            self.vna.write(f'CALC{channel}:MEAS:DEL:ALL')
+            self.vna.write('*WAI')
             print("All measurements deleted")
-            time.sleep(1)
+            time.sleep(0.5)
 
         except Exception as e:
             print(f"erreur lors du stetup du cannal de mesure: {e}")
@@ -176,12 +179,14 @@ class VNA_commande:
             channel = 1
             trace = 1
             for i, Sparam in enumerate(Sparameters):
-                self.vna.write(f'CALC{channel}:PAR:DEF'+' '+f"{Sparam}"+","+f'{Sparam}') # define a new trace
-                self.vna.write(f'CALC{channel}:PAR:SEL "{Sparam}"') # select the new trace
+                self.vna.write(f'CALC{channel}:PAR:DEF {Sparam},{Sparam}') # define a new trace
+                self.vna.write(f'CALC{channel}:PAR:SEL "{Sparam}"')
+                self.vna.write('*WAI')
                 self.vna.write(f'DISP:WIND{i+1}:STAT ON') # turn on the window display
                 self.vna.write(f'DISP:WIND{i+1}:TRAC{trace}:FEED "{Sparam}"') # put the new trace into the window
+                self.vna.write('*WAI')
                 print(f"Trace {Sparam} ajoutée à la fenêtre {i+1}")
-            time.sleep(3)
+            time.sleep(1)
             # Autoscale all traces in each window
             for i, Sparam in enumerate(Sparameters):
                 self.vna.write(f':DISP:WIND{i+1}:Y:AUTO') # autoscale the trace
@@ -243,19 +248,22 @@ class VNA_commande:
         for i, trace in enumerate(Sparameters):
             print(f'Measuring {trace}')
             # Select the S-parameter
-            self.vna.write(f'CALC{channel}:PAR:SEL {trace}')
-            time.sleep(2)
+            self.vna.write(f'CALC{channel}:PAR:SEL "{trace}"')
+            self.vna.write('*WAI')
+            time.sleep(0.5)
 
             # Get the magnitude
             # 'FDATA' -> real part of the data
             self.vna.write(f'CALC{channel}:FORM MLOG') # magnitude (dB)
+            self.vna.write('*WAI')
+            time.sleep(0.5)
             all_magnitudes.append(self.vna.query_ascii_values(f'CALC{channel}:DATA? FDATA'))
-            time.sleep(2)
 
             # Get the phase
             self.vna.write(f'CALC{channel}:FORM PHAS') # phase (°)
+            self.vna.write('*WAI')
+            time.sleep(0.5)
             all_phases.append(self.vna.query_ascii_values(f'CALC{channel}:DATA? FDATA'))
-            time.sleep(2)
         
         return np.array(freq_samples), np.array(all_magnitudes), np.array(all_phases)
 
