@@ -11,7 +11,7 @@ vnac = vnal.VNA_commande(vna_ip)
 
 vnac.load_calib_vna(file="wr6-5_25022026.csa")
 
-vnac.setup_channel_vna(start_freq=110E9, stop_freq=170E9, points=1000, IFBW=1000) #start_freq, stop_freq et IFBW en Hz
+vnac.setup_channel_vna(start_freq=110E9, stop_freq=170E9, IFBW=1000) #start_freq, stop_freq et IFBW en Hz
 
 Sparameters=["S21", "S12", "S11", "S22"]
 vnac.setup_traces(Sparameters=Sparameters)
@@ -30,12 +30,12 @@ axs[0].plot(freq_samples, mag[0])
 axs[0].set_ylabel("dB")
 axs[0].set_xlabel("frequency")
 
-axs[1].plot(freq_samples, mag[1])
+axs[1].plot(freq_samples, phi[0])
 axs[1].set_ylabel("deg")
 axs[1].set_xlabel("frequency")
 
 fig.tight_layout()
 plt.show()
 
-#vnac.vna.close()
+# vnac.vna.close()
 # %%h
