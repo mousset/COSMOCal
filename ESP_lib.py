@@ -93,10 +93,11 @@ class ESP_commande:
             # elif speed==3:
             #     speed_mode = "VU15"
             # self.esp.write(f'{axis}{speed_mode}')
+            
+            print("Starting movement...")
             movement_mode = f'{"PA" if absolute else "PR"}'
             self.esp.write(f'{axis}{movement_mode}{movement}')
             self.esp.write(f'{axis}WS')
-            print("Deplacment terminé")
         except Exception as e:
             print(f"erreur lors du deplacement: {e}")
             
