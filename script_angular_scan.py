@@ -31,12 +31,11 @@ alpha_min, alpha_max = 0, 380 # limits of the angular scan in degrees
 sens = "-to+" # direction of the scan; -to+ for the scan to begin at alpha_min and end at alpha_max, and +to- for the scan to begin at alpha_max and end at alpha_min
 pas = 10 # steps
 state_avg = True # if True, the VNA will average over several sweeps for each position of the motor
-count_avg = 10 # Number of sweeps to average
+count_avg = 2 # Number of sweeps to average
 save_path = "C:\\Users\\Administrator\\Documents\\Scripts_Commande_VNA\\CosmoCal_data\\"
 
 start_freq = 110E9 # start frequency of the VNA sweep in Hz.
 stop_freq = 170E9 # stop frequency of the VNA sweep in Hz
-points = 60 # number of points in the VNA sweep.
 IFBW = 1000 # Hz
 
 theta_R = 0 # angle of the receiver in degrees
@@ -46,7 +45,7 @@ nS = len(Sparameters) # Number of S parameters
 
 ####### VNA set-up
 vnac.load_calib_vna(file="wr6-5_25022026.csa")
-vnac.setup_channel_vna(start_freq=start_freq, stop_freq=stop_freq, points=points, IFBW=IFBW)
+vnac.setup_channel_vna(start_freq=start_freq, stop_freq=stop_freq, IFBW=IFBW)
 vnac.setup_traces(Sparameters=Sparameters)
 
 ######## Move to initial position
@@ -65,8 +64,7 @@ time.sleep(5)
 
 ########## GET VNA frequency range
 # Useless for now 
-#start_freq, stop_freq, points = vnac.ask_frequency_range()
-#alpha_val = np.arange(alpha_min, alpha_max + pas, pas)
+start_freq, stop_freq, points = vnac.ask_frequency_range()
 
 ###### Start the scan
 nstep = int(np.ceil(np.abs(1 + (alpha_max - alpha_min) / pas )))
@@ -85,9 +83,8 @@ for i in range(nstep):
     freq_samples, mag[i, :, :], phi[i, :, :] = vnac.make_one_acquisition(state_avg=state_avg, count_avg=count_avg, Sparameters=Sparameters)
     print(f'Magnitudes {mag.shape}:') # [nS, points]
     print(f'Phases: {phi.shape}')
-    # Move by one step
-    espc.move(axis=axis, movement=pas, absolute=False)
     time.sleep(2)
+
     # Save file at each step to avoid loosing data
     np.save(f'{save_path}mag.npy', mag)
     np.save(f'{save_path}phi.npy', phi)
@@ -111,6 +108,9 @@ for i in range(nstep):
     }
     dml.save_measurement_to_fits(freq_samples, mag[:i+1, :, :], phi[:i+1, :, :], save_path, 
                                   filename=fits_filename, header_info=header_info)
+    # Move by one step
+    espc.move(axis=axis, movement=pas, absolute=False)
+    time.sleep(pas+2)
 
 ####### Close hardware connexions
 espc.return_home(axis=axis)
