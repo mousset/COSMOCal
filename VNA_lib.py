@@ -79,27 +79,47 @@ class VNA_commande:
 
         """
         try:
+            channel = 1
+
             self.vna.write(':MMEM:LOAD:FILE "%s"' % (f'D:/{file}')) # call the saved state and calset data
             self.vna.write('*WAI') # wait for the VNA to finish loading the state before sending the next command
+            time.sleep(12) # wait the VNA (can be long, especially if averaging was on during the calibration)
+
+            # Autoscale all traces in each window
+            for i in range(4):
+                self.vna.write(f':DISP:WIND{i+1}:Y:AUTO') # autoscale the 4 traces
+                self.vna.write('*WAI')
+
+             # Lecture des paramètres réellement chargés par le state
+            start_freq = float(self.vna.query(f'SENS{channel}:FREQ:START?').strip())
+            stop_freq = float(self.vna.query(f'SENS{channel}:FREQ:STOP?').strip())
+            points = int(float(self.vna.query(f'SENS{channel}:SWE:POIN?').strip()))
+            ifbw = float(self.vna.query(f'SENS{channel}:BAND?').strip())
+
+
             print(f'VNA state {file} loaded.')
+            print(f'Paramètres chargés sur CH{channel} :')
+            print(f'  START = {start_freq:.6e} Hz')
+            print(f'  STOP  = {stop_freq:.6e} Hz')
+            print(f'  POINTS = {points}')
+            print(f'  IFBW   = {ifbw:.6e} Hz')
             time.sleep(1)
+            
         except Exception as e:
             print(f"erreur lors de la selection de la bande: {e}")
 
-    def setup_channel_vna(self, start_freq=1E9, stop_freq=3E9, points=201, IFBW=1000): 
+    def setup_channel_vna(self, start_freq=110E9, stop_freq=170E9, IFBW=1000): 
         """
         Configures a VNA channel.
 
         Parameters
         ----------
         start_freq : integer or floating
-            Start frequency (in Hz) of the sweep. The default is 1E9.
+            Start frequency (in Hz) of the sweep. The default is 110E9.
         stop_freq : integer or floating
-            Stop frequency (in Hz) of the sweep. The default is 3E9.
-        points : integer
-            Number of points/frequency in the frequency sweep. The default is 201.
+            Stop frequency (in Hz) of the sweep. The default is 170E9.
         IFBW : integer or floating
-            Bandwidth (in Hz) of the low-pass filter at the mixer output, before detection. The default is 1000.
+            Bandwidth (in Hz) of the low-pass filter at the mixer output, before detection. The default is 1000. It is better to set it at the value used for the calibration, to avoid deformations of the measured signal.
 
         Returns
         -------
@@ -108,21 +128,24 @@ class VNA_commande:
         """
         try:
             channel = 1
-            # Delete all previous parameters
-            #self.vna.write(f'CALC{channel}:PAR:DEL:ALL') 
-
-            ## Set the start and stop frequencies, number of points, IFBW
-            self.vna.write(f'SENS{channel}:FREQ:START {start_freq}') 
-            self.vna.write(f'SENS{channel}:FREQ:STOP {stop_freq}') 
-            self.vna.write(f'SENS{channel}:SWE:POIN {points}')
-            self.vna.write(f'SENS{channel}:BAND {IFBW}')
-            print(f"Canal {channel} configuré : start={start_freq}, stop={stop_freq}, points={points}")
 
             ## Turn off the continuous measure mode => avoid Error 213 (Init ignored)
             self.vna.write(f'INIT{channel}:CONT OFF')
             self.vna.write('*WAI')
             print("Continuous mode OFF")
             time.sleep(0.5)
+
+            ## Set the start and stop frequencies, IFBW
+            self.vna.write(f'SENS{channel}:FREQ:START {start_freq}') 
+            self.vna.write(f'SENS{channel}:FREQ:STOP {stop_freq}') 
+            self.vna.write(f'SENS{channel}:BAND {IFBW}')
+            #self.vna.write(f'SENS{channel}:SWE:POIN {points}') # The number of points is set by the loaded calibration file, the signal will be deformed if we change it
+            print(f"Canal {channel} configuré : start={start_freq}, stop={stop_freq}, IFBW={IFBW}")
+
+            # Autoscale all traces in each window
+            for i in range(4):
+                self.vna.write(f':DISP:WIND{i+1}:Y:AUTO') # autoscale the 4 traces
+                self.vna.write('*WAI')
 
             ### Delete all the default measurements
             self.vna.write(f'CALC{channel}:MEAS:DEL:ALL')
@@ -252,18 +275,20 @@ class VNA_commande:
             self.vna.write('*WAI')
             time.sleep(0.5)
 
-            # Get the magnitude
-            # 'FDATA' -> real part of the data
-            self.vna.write(f'CALC{channel}:FORM MLOG') # magnitude (dB)
-            self.vna.write('*WAI')
-            time.sleep(0.5)
-            all_magnitudes.append(self.vna.query_ascii_values(f'CALC{channel}:DATA? FDATA'))
-
             # Get the phase
             self.vna.write(f'CALC{channel}:FORM PHAS') # phase (°)
             self.vna.write('*WAI')
             time.sleep(0.5)
             all_phases.append(self.vna.query_ascii_values(f'CALC{channel}:DATA? FDATA'))
-        
+
+            # Get the magnitude
+            # 'FDATA' -> real part of the data
+            self.vna.write(f'CALC{channel}:FORM MLOG') # magnitude (dB)          
+            self.vna.write('*WAI')
+            self.vna.write(f"DISP:WIND{i+1}:TRAC1:Y:AUTO") # autoscale the trace
+            self.vna.write('*WAI')
+            time.sleep(0.5)
+            all_magnitudes.append(self.vna.query_ascii_values(f'CALC{channel}:DATA? FDATA'))           
+
         return np.array(freq_samples), np.array(all_magnitudes), np.array(all_phases)
 
