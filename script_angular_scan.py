@@ -8,7 +8,6 @@ import csv
 import data_manage_lib as dml
 from astropy.io import fits
 
-# TODO : clarifier un peu le script mais il marche
 
 ############ ESP ################
 import ESP_lib as espl
@@ -63,7 +62,6 @@ espc.move(axis=axis, movement=start_movement, absolute=True)
 time.sleep(5)
 
 ########## GET VNA frequency range
-# Useless for now 
 start_freq, stop_freq, points = vnac.ask_frequency_range()
 
 ###### Start the scan
