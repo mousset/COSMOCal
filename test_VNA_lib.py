@@ -18,7 +18,7 @@ vnac.setup_traces(Sparameters=Sparameters)
 
 freq_samples, mag, phi = vnac.make_one_acquisition(state_avg=False, count_avg=5, Sparameters=Sparameters)
 
-#np.save(f'{save_path}mag_avec_mousse++doublepropre_dans_polar.npy', mag)
+np.save(f'{save_path}magnitude_16032026_reference_thetaR0.npy', mag)
 
 # print(mag.shape)
 
@@ -26,11 +26,11 @@ freq_samples, mag, phi = vnac.make_one_acquisition(state_avg=False, count_avg=5,
 fig, axs = plt.subplots(1, 2)
 axs = axs.ravel()
 
-axs[0].plot(freq_samples, mag[0])
+axs[0].plot(freq_samples, mag[2])
 axs[0].set_ylabel("dB")
 axs[0].set_xlabel("frequency")
 
-axs[1].plot(freq_samples, phi[0])
+axs[1].plot(freq_samples, phi[2])
 axs[1].set_ylabel("deg")
 axs[1].set_xlabel("frequency")
 
