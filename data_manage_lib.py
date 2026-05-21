@@ -63,6 +63,45 @@ def save_measurement_to_fits(freqs, mag, phi, save_path, filename="measurement.f
     hdul.writeto(full_path, overwrite=True)
     print(f"FITS file saved: {full_path}")
 
+def load_measurement_from_fits(dir, scan):
+    """
+    Load frequency samples, magnitude, and phase data from a FITS file.
+    
+    Parameters
+    ----------
+    dir : str
+        Directory path where the FITS file is located
+    scan : str
+        Scan identifier
+
+    Returns
+    -------
+    freqs : np.array
+        Frequency samples
+    mag : np.ndarray
+        Magnitude array
+    phi : np.ndarray
+        Phase array
+    header_info : dict
+        Dictionary containing header metadata
+    """
+    fits_file = dir + f"Scan_{scan}.fits"
+
+    with fits.open(fits_file) as hdul:
+        freqs = hdul[0].data // 1e9  # Convert from Hz to GHz
+        mag = hdul[1].data
+        phi = hdul[2].data
+
+        ### For the first scans, magnitude and phase were in the first two extensions, the frequency samples were not saved
+        # mag = hdul[0].data  # Access magnitude [dB]
+        # phi = hdul[1].data  # Access phase [deg]
+        
+        # Extract header information into a dictionary
+        header_info = {key: hdul[0].header[key] for key in hdul[0].header.keys()}
+        
+    print(f"FITS file loaded: {fits_file}")
+    return freqs, mag, phi, header_info
+
 def get_colors(n_steps, cmap_name='Blues', vmin=0, vmax=None):
     if vmax is None:
         vmax = n_steps - 1
